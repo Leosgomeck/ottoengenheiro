@@ -181,6 +181,44 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .tool{min-width:72px}
   .hud .chip:nth-child(3){display:none}
 }
+/* AJUSTE: só Obra atual e Cidade, janelas em 50%, campo maior */
+.oculto{display:none!important}
+.hud{padding:4px 8px}
+.chip{padding:3px 8px}
+.main{grid-template-columns:minmax(0,1fr) 136px}
+.side{padding:6px;gap:6px}
+.side .card{padding:6px 7px;border-radius:9px;border-width:1px;box-shadow:0 1px 0 #fcd34d}
+.side .card h3{font-size:11px;margin-top:0}
+.side .card p{font-size:9px;margin:2px 0 0}
+.side .label{font-size:8px;letter-spacing:.04em}
+.side .timer{height:6px;margin-top:4px}
+.side .timerTxt{font-size:8px;margin-top:2px}
+.side .reqs{margin-top:4px;gap:3px}
+.side .reqs li{font-size:9px;padding:2px 4px;gap:4px;border-radius:6px}
+.side .reqs .box{width:10px;height:10px;font-size:7px;border-radius:3px}
+.side .stats{gap:3px;margin-top:4px}
+.side .stat{padding:3px;border-radius:6px}
+.side .stat span{font-size:7px}
+.side .stat b{font-size:9px}
+.dock{padding:3px 8px 4px;gap:3px}
+.tab{padding:3px 10px;font-size:11px}
+.tool{min-width:72px;padding:3px 4px;border-radius:12px}
+.tool .ic{font-size:18px}
+.tool .nm{font-size:10px}
+.tool .cs{font-size:9px}
+@media (max-width:860px){
+  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  .side{flex-direction:row;max-height:96px;padding:4px 6px;border-left:0;border-top:3px solid #fcd34d;overflow-x:auto;overflow-y:hidden}
+  .side .card{min-width:150px;padding:4px 6px;overflow-y:auto}
+  .side .card h3{font-size:10px}
+  .side .card p{font-size:9px}
+  .side .reqs li{font-size:9px}
+}
+@media (max-width:860px) and (orientation:landscape){
+  .main{grid-template-columns:minmax(0,1fr) 120px}
+  .side{padding:4px;gap:4px}
+  .side .card{min-width:0;width:100%;padding:4px 5px}
+}
 </style>
 </head>
 <body>
@@ -205,7 +243,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     </section>
 
     <aside class="side">
-      <div class="card msgbar">
+      <div class="card msgbar oculto">
         <div class="tip off" id="tip">
           <div class="av">👷<img src="otto_foto_original.jpeg" alt="" onerror="this.remove()"></div>
           <div><div class="who">Otto</div><p id="tipText"></p></div>
@@ -221,7 +259,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         <div class="timerTxt" id="timerTxt">—</div>
         <ul class="reqs" id="reqs"></ul>
       </div>
-      <div class="card">
+      <div class="card oculto">
         <div class="label">Terreno</div>
         <h3 id="infoName">Terreno livre</h3>
         <p id="infoDetail">Passe o mouse sobre o mapa.</p>
