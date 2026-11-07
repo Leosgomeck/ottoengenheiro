@@ -214,6 +214,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .side .card p{font-size:9px}
   .side .reqs li{font-size:9px}
 }
+/* Celular em pé: barra de construção 15% menor e deslizável */
+@media (max-width:860px) and (orientation:portrait){
+  .dock{padding:3px 5px 4px;gap:3px;width:100%;min-width:0;max-width:100vw;box-sizing:border-box;overflow:hidden}
+  .tabs,.toolrow{min-width:0;max-width:100%}
+  .tabs{padding-top:0;padding-bottom:0}
+  .tab{padding:2px 8px;font-size:10px}
+  .toolrow{padding:2px 1px 1px;gap:5px;overflow-x:auto;touch-action:pan-x}
+  .tool{min-width:62px;padding:3px 3px 2px;border-radius:12px}
+  .tool .ic{font-size:17px;line-height:1.1}
+  .tool .nm{font-size:9px;line-height:1.1}
+  .tool .cs{font-size:8px;line-height:1.1}
+}
 @media (max-width:860px) and (orientation:landscape){
   .main{grid-template-columns:minmax(0,1fr) 120px}
   .side{padding:4px;gap:4px}
@@ -952,7 +964,8 @@ function renderTabs() {
 }
 function renderTools() {
   const box = $('tools'); box.innerHTML = '';
-  const items = Object.entries(TOOLS).filter(([, t]) => t.cat === S.cat);
+  // Celular em pé: todas as construções na mesma barra, para deslizar
+  const items = Object.entries(TOOLS).filter(([id, t]) => id !== 'demolir' && (PORTRAIT_ALL() || t.cat === S.cat));
   items.push(['demolir', TOOLS.demolir]);
   for (const [id, t] of items) {
     const b = document.createElement('button');
@@ -978,6 +991,11 @@ function renderPalette() {
     box.appendChild(s);
   }
 }
+function PORTRAIT_ALL() {
+  return window.matchMedia('(max-width:860px) and (orientation:portrait)').matches;
+}
+window.matchMedia('(max-width:860px) and (orientation:portrait)').addEventListener('change', () => renderTools());
+
 function selectTool(id) {
   if (!TOOLS[id]) return;
   SFX.click();
