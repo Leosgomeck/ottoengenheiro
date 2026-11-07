@@ -231,22 +231,24 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .side{padding:4px;gap:4px}
   .side .card{min-width:0;width:100%;padding:4px 5px}
 }
-/* Celular em pé: painéis em duas colunas, encaixados e arredondados */
+/* Celular em pé: campo sobe e os painéis ocupam a altura até a barra de construção */
 @media (max-width:860px) and (orientation:portrait){
-  .side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto;align-items:stretch;gap:8px;padding:8px;max-height:none;overflow:hidden;flex-direction:initial;border-top:3px solid #fcd34d;border-left:0}
-  .side .card{min-width:0;width:auto;margin:0;padding:8px;border-radius:18px;border-width:2px;overflow:hidden;box-shadow:0 10px 18px -6px rgba(120,53,15,.45),0 3px 0 #fcd34d;transform:translateY(-2px)}
-  .side .card h3{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:0}
-  .side .card p{font-size:10px;line-height:1.25;margin:2px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .side .label{font-size:9px;letter-spacing:.04em}
-  .side .timer{height:8px;margin-top:5px}
-  .side .timerTxt{font-size:9px;margin-top:2px}
-  .side .reqs{margin-top:5px;gap:3px;max-height:64px;overflow-y:auto}
-  .side .reqs li{font-size:10px;padding:3px 5px;border-radius:8px}
-  .side .reqs .box{width:12px;height:12px;font-size:8px;border-radius:4px}
-  .side .stats{gap:5px;margin-top:5px}
-  .side .stat{padding:5px 3px;border-radius:12px;box-shadow:0 3px 6px -2px rgba(120,53,15,.35)}
-  .side .stat span{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .side .stat b{font-size:13px}
+  .main{grid-template-rows:auto minmax(0,1fr)}
+  .stage{flex:none;align-items:flex-start;padding:8px 0 0;overflow:visible}
+  .side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-items:stretch;gap:8px;padding:8px 8px 10px;max-height:none;height:100%;min-height:0;overflow:hidden;flex-direction:initial;border-top:3px solid #fcd34d;border-left:0}
+  .side .card{min-width:0;width:auto;margin:0;padding:10px;border-radius:18px;border-width:2px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 20px -8px rgba(120,53,15,.5),0 3px 0 #fcd34d;transform:translateY(-3px)}
+  .side .card h3{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .side .card p{font-size:13px;line-height:1.35;margin:4px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .side .label{font-size:10px;letter-spacing:.04em}
+  .side .timer{height:10px;margin-top:8px}
+  .side .timerTxt{font-size:10px;margin-top:3px}
+  .side .reqs{margin-top:8px;gap:6px;flex:1;min-height:0;overflow-y:auto;align-content:flex-start}
+  .side .reqs li{font-size:14px;padding:10px 10px;border-radius:12px}
+  .side .reqs .box{width:14px;height:14px;font-size:9px;border-radius:4px}
+  .side .stats{flex:1;grid-auto-rows:1fr;gap:6px;margin-top:8px;align-content:stretch}
+  .side .stat{padding:6px 4px;border-radius:14px;box-shadow:0 4px 8px -3px rgba(120,53,15,.4);display:flex;flex-direction:column;justify-content:center}
+  .side .stat span{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .side .stat b{font-size:22px}
 }
 </style>
 </head>
@@ -1466,7 +1468,8 @@ function frame(ts) {
 function fit() {
   const rect = $('stage').getBoundingClientRect();
   const pad = window.matchMedia('(max-width:860px)').matches ? 8 : 28;
-  const availW = Math.max(200, rect.width - pad), availH = Math.max(160, rect.height - pad);
+  const portraitPhone = window.matchMedia('(max-width:860px) and (orientation:portrait)').matches;
+  const availW = Math.max(200, rect.width - pad), availH = portraitPhone ? Infinity : Math.max(160, rect.height - pad);
   const s = Math.min(availW / W, availH / H);
   const cw = Math.floor(W * s), ch = Math.floor(H * s);
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
