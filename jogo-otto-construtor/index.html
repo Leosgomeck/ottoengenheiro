@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OTTO Construtor — O Jogo da Cidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+<style>
+:root{--amber:#f59e0b;--amber-d:#b45309;--ink:#1e293b;--card:#fffdf5}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Fredoka',system-ui,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:#0b2233;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.hidden{display:none!important}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(180deg,#fbbf24,#f59e0b 60%,#d97706);border-bottom:4px solid var(--amber-d);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.25);z-index:5;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:8px;background:rgba(120,53,15,.38);padding:6px 12px;border-radius:14px;white-space:nowrap}
+.chip small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.9;line-height:1}
+.chip strong{font-size:18px;line-height:1.15;font-weight:700}
+.chip .ico{font-size:22px}
+.hud .spacer{flex:1}
+.iconbtn{width:40px;height:40px;border-radius:12px;background:rgba(120,53,15,.45);display:grid;place-items:center;font-size:18px;transition:transform .1s,background .2s}
+.iconbtn:hover{background:rgba(120,53,15,.7)}
+.iconbtn:active{transform:scale(.92)}
+.money{color:#fef08a}
+
+/* MAIN */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 272px;min-height:0;position:relative}
+.stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#1e5f74,#0b2233 85%)}
+#city{display:block;border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.45),0 0 0 6px #f59e0b,0 0 0 9px #b45309;cursor:crosshair;touch-action:none}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+.side{background:var(--card);border-left:4px solid #fcd34d;padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0}
+.card{background:#fff;border:2px solid #fde68a;border-radius:16px;padding:12px;box-shadow:0 2px 0 #fcd34d;flex:none}
+.card h3{font-size:18px;font-weight:700;line-height:1.2;margin-top:2px}
+.card p{font-size:13px;line-height:1.35;color:#475569;margin-top:4px}
+.label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#92400e;font-weight:700}
+.timer{height:14px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:8px;border:2px solid #cbd5e1}
+#timerBar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#84cc16);transition:width .25s linear,background .3s}
+.timerTxt{font-size:12px;font-weight:700;margin-top:4px;text-align:right;color:#92400e}
+.reqs{list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.reqs li{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 8px;border-radius:10px;background:#fef3c7}
+.reqs .box{width:20px;height:20px;border-radius:6px;border:2px solid #d97706;display:grid;place-items:center;font-size:12px;flex:none;background:#fff;color:#fff}
+.reqs li.done{background:#dcfce7;color:#14532d}
+.reqs li.done .box{background:#16a34a;border-color:#16a34a}
+.reqs .prog{margin-left:auto;font-size:12px;opacity:.85}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.stat{background:#fff7ed;border-radius:10px;padding:6px;text-align:center}
+.stat span{display:block;font-size:10px;color:#9a3412;text-transform:uppercase;font-weight:700}
+.stat b{font-size:17px}
+
+/* Otto tip + banner */
+.tip{position:absolute;left:14px;bottom:14px;max-width:min(92%,390px);display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.97);border:3px solid var(--amber);border-radius:18px;padding:8px 12px 8px 8px;box-shadow:0 10px 24px rgba(0,0,0,.25);transition:opacity .25s,transform .25s;z-index:4}
+.tip.off{opacity:0;transform:translateY(8px);pointer-events:none}
+.tip .av{width:48px;height:48px;border-radius:14px;overflow:hidden;border:2px solid var(--amber);flex:none;background:#fef3c7;display:grid;place-items:center;font-size:26px;position:relative}
+.tip .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tip .who{font-size:11px;color:#b45309;font-weight:700;text-transform:uppercase}
+.tip p{font-size:14px;font-weight:600;line-height:1.3}
+.banner{position:absolute;top:14px;left:50%;transform:translate(-50%,-30px);opacity:0;background:rgba(15,23,42,.92);color:#fff;padding:10px 18px;border-radius:99px;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(0,0,0,.3);transition:all .35s cubic-bezier(.2,1.4,.5,1);pointer-events:none;z-index:6;white-space:nowrap}
+.banner.show{opacity:1;transform:translate(-50%,0)}
+.pauseMark{position:absolute;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.35);color:#fff;font-size:34px;font-weight:700;pointer-events:none;z-index:3}
+
+/* Dock */
+.dock{background:#fff;border-top:4px solid var(--amber);box-shadow:0 -8px 24px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:6px;padding:6px 10px 10px;z-index:5}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-top:2px}
+.tab{padding:6px 14px;border-radius:12px;font-weight:700;font-size:14px;background:#fef3c7;color:#92400e;white-space:nowrap}
+.tab.on{background:var(--amber);color:#fff;box-shadow:0 3px 0 var(--amber-d)}
+.toolrow{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 2px;align-items:stretch}
+.tool{position:relative;min-width:110px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 8px 7px;border-radius:16px;background:#f8fafc;border:3px solid #e2e8f0;transition:transform .12s,border-color .15s,background .15s,box-shadow .15s;flex:none}
+.tool:hover{border-color:#fbbf24;background:#fffbeb}
+.tool:active{transform:scale(.95)}
+.tool.on{border-color:var(--amber);background:#fff7d6;box-shadow:0 6px 14px rgba(245,158,11,.35);transform:translateY(-2px)}
+.tool .ic{font-size:26px;line-height:1}
+.tool .nm{font-size:13px;font-weight:700}
+.tool .cs{font-size:12px;font-weight:700;color:#15803d}
+.tool .kb{position:absolute;top:4px;left:6px;font-size:10px;font-weight:700;background:#e2e8f0;border-radius:6px;padding:0 5px;color:#475569}
+.tool.danger{background:#fef2f2;border-color:#fecaca}
+.tool.danger .cs{color:#b91c1c}
+.tool.danger.on{border-color:#ef4444;background:#fee2e2}
+.palette{display:flex;gap:8px;align-items:center;padding:2px 4px;flex-wrap:wrap}
+.palette .lbl{font-size:12px;font-weight:700;color:#92400e;margin-right:4px}
+.sw{width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #e2e8f0;transition:transform .1s}
+.sw.on{box-shadow:0 0 0 3px var(--amber);transform:scale(1.15)}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;z-index:50;background:linear-gradient(180deg,rgba(14,116,144,.9),rgba(12,74,110,.96));display:grid;place-items:center;padding:16px;overflow:auto}
+.panel{width:min(560px,100%);background:var(--card);border-radius:26px;padding:22px;box-shadow:0 30px 60px rgba(0,0,0,.4);border:5px solid var(--amber);text-align:center}
+.panel .logo{display:block;width:min(300px,80%);margin:0 auto 10px;border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.fallbackLogo{font-size:44px;font-weight:700;color:var(--amber-d);margin-bottom:6px}
+.panel h1{font-size:32px;line-height:1.05;color:var(--amber-d)}
+.panel .sub{font-size:15px;color:#475569;margin:6px 0 14px;font-weight:600}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.mode{padding:12px;border-radius:18px;border:3px solid #e2e8f0;background:#fff;text-align:left;transition:all .15s}
+.mode .t{font-weight:700;font-size:17px}
+.mode .d{font-size:12px;color:#64748b;line-height:1.3;margin-top:2px}
+.mode.on{border-color:var(--amber);background:#fff7d6;box-shadow:0 6px 14px rgba(245,158,11,.3)}
+.how{background:#ecfeff;border-radius:16px;padding:10px 14px;text-align:left;font-size:13px;line-height:1.5;color:#164e63;margin-bottom:14px}
+.how b{color:#0e7490}
+.btn{display:block;width:100%;padding:14px;border-radius:18px;background:linear-gradient(180deg,#fb923c,#ea580c);color:#fff;font-size:22px;font-weight:700;box-shadow:0 6px 0 #9a3412;transition:transform .1s,box-shadow .1s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #9a3412}
+.btn.sec{background:linear-gradient(180deg,#38bdf8,#0284c7);box-shadow:0 6px 0 #075985;margin-top:10px;font-size:17px;padding:10px}
+.score{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.score div{background:#fff7ed;border-radius:14px;padding:10px}
+.score b{display:block;font-size:28px;color:#c2410c}
+.score span{font-size:12px;color:#9a3412;font-weight:700;text-transform:uppercase}
+
+/* Abertura com a foto do Otto */
+.intro{position:fixed;inset:0;z-index:60;background:#0b2233;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:hidden;transition:opacity .7s ease}
+.intro.out{opacity:0;pointer-events:none}
+.intro .photo{position:absolute;inset:-2%;background:url(otto_foto_original.jpeg) center 22%/cover no-repeat;animation:kb 12s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.08)}}
+.intro .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,34,51,.1) 0%,rgba(11,34,51,0) 32%,rgba(11,34,51,.85) 82%,#0b2233 100%)}
+.intro .content{position:relative;width:min(560px,92%);text-align:center;padding-bottom:8vh;color:#fff}
+.intro h1{font-size:clamp(34px,6vw,60px);line-height:1;color:#fde047;text-shadow:0 4px 0 #b45309,0 10px 24px rgba(0,0,0,.6);animation:rise .9s ease both}
+.intro .sub{font-size:clamp(15px,2.2vw,19px);font-weight:600;margin:10px 0 24px;opacity:0;animation:rise .9s .4s ease forwards;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.loadTrack{height:20px;border-radius:99px;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.55);overflow:hidden}
+#introBar{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#fde047,#f59e0b,#fb923c);box-shadow:0 0 14px #fbbf24}
+.loadInfo{display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-top:10px;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+
+@media (max-width:860px){
+  .main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  .side{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-left:0;border-top:4px solid #fcd34d;padding:8px;gap:8px}
+  .side .card{min-width:240px}
+  .hide-sm{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hud">
+    <div class="chip"><span class="ico">👷</span><div><small>Engenheiro</small><strong>Otto</strong></div></div>
+    <div class="chip money"><span class="ico">💰</span><div><small>Cofre da obra</small><strong id="hMoney">R$ 0</strong></div></div>
+    <div class="chip"><span class="ico">❤️</span><div><small>Reputação</small><strong id="hHearts">❤️❤️❤️</strong></div></div>
+    <div class="chip hide-sm"><span class="ico">🏁</span><div><small>Obras</small><strong id="hDone">0</strong></div></div>
+    <div class="chip hide-sm"><span class="ico">📈</span><div><small>Modo</small><strong id="hMode">Júnior</strong></div></div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="bPause" title="Pausar (P)">⏸️</button>
+    <button class="iconbtn" id="bNight" title="Dia / Noite (N)">☀️</button>
+    <button class="iconbtn" id="bSound" title="Som (M)">🔊</button>
+    <button class="iconbtn" id="bMenu" title="Menu inicial">🏠</button>
+  </header>
+
+  <main class="main">
+    <section class="stage" id="stage">
+      <canvas id="city"></canvas>
+      <div class="pauseMark hidden" id="pauseMark">⏸ PAUSADO</div>
+      <div class="banner" id="banner"></div>
+      <div class="tip off" id="tip">
+        <div class="av">👷<img src="otto_foto_original.jpeg" alt="" onerror="this.remove()"></div>
+        <div><div class="who">Otto</div><p id="tipText"></p></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="card">
+        <div class="label">Obra atual</div>
+        <h3 id="obraTitle">—</h3>
+        <p id="obraDesc"></p>
+        <div class="timer"><div id="timerBar"></div></div>
+        <div class="timerTxt" id="timerTxt">—</div>
+        <ul class="reqs" id="reqs"></ul>
+      </div>
+      <div class="card">
+        <div class="label">Terreno</div>
+        <h3 id="infoName">Terreno livre</h3>
+        <p id="infoDetail">Passe o mouse sobre o mapa.</p>
+        <p id="infoAction" style="font-weight:700;margin-top:6px"></p>
+      </div>
+      <div class="card">
+        <div class="label">Cidade</div>
+        <div class="stats">
+          <div class="stat"><span>Moradores</span><b id="stPop">12</b></div>
+          <div class="stat"><span>Impostos / 10s</span><b id="stTax">R$ 0</b></div>
+          <div class="stat"><span>Construções</span><b id="stBuilt">0</b></div>
+          <div class="stat"><span>Obras feitas</span><b id="stDone">0</b></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="dock">
+    <div class="tabs" id="tabs"></div>
+    <div class="toolrow" id="tools"></div>
+    <div class="palette hidden" id="palette"></div>
+  </footer>
+</div>
+
+<!-- Abertura com a foto do Otto -->
+<div class="intro" id="ovIntro">
+  <div class="photo"></div>
+  <div class="shade"></div>
+  <div class="content">
+    <h1>OTTO CONSTRUTOR</h1>
+    <p class="sub">Grandes sonhos também constroem grandes obras!</p>
+    <div class="loadTrack"><div id="introBar"></div></div>
+    <div class="loadInfo"><span id="introTxt">Carregando...</span><span id="introPct">0%</span></div>
+  </div>
+</div>
+
+<!-- Tela inicial -->
+<div class="overlay hidden" id="ovStart">
+  <div class="panel">
+    <img class="logo" src="logo_otto_construtor.jpg" alt="OTTO Construtor"
+         onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')">
+    <div class="fallbackLogo hidden">👷 OTTO Construtor</div>
+    <h1>O Jogo da Cidade</h1>
+    <p class="sub">Construa a cidade dos seus sonhos!</p>
+    <div class="modes">
+      <button class="mode on" data-mode="junior">
+        <div class="t">🌟 Júnior</div>
+        <div class="d">5 a 7 anos. Obras mais leves, mais tempo e mais moedas.</div>
+      </button>
+      <button class="mode" data-mode="chefe">
+        <div class="t">🏆 Engenheiro Chefe</div>
+        <div class="d">8 a 12 anos. Orçamento apertado e prazos de verdade.</div>
+      </button>
+    </div>
+    <div class="how">
+      <b>Como jogar:</b> escolha uma ferramenta embaixo e clique (ou arraste) no mapa.
+      Cumpra a obra antes do prazo: ela é entregue sozinha, e quanto mais rápido, mais estrelas e dinheiro.
+      Perder um prazo custa uma ❤️ de reputação.
+      <br><b>Atalhos:</b> 1–9 e 0 escolhem ferramentas · P pausa · N dia/noite · M som.
+    </div>
+    <button class="btn" id="bPlay">JOGAR!</button>
+  </div>
+</div>
+
+<!-- Fim de jogo -->
+<div class="overlay hidden" id="ovEnd">
+  <div class="panel">
+    <div style="font-size:56px">🏗️</div>
+    <h1>Fim da obra!</h1>
+    <p class="sub" id="endSub"></p>
+    <div class="score">
+      <div><b id="endDone">0</b><span>Obras entregues</span></div>
+      <div><b id="endBest">0</b><span>Recorde</span></div>
+    </div>
+    <button class="btn" id="bAgain">Jogar de novo</button>
+    <button class="btn sec" id="bMenu2">Menu inicial</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= CONFIGURAÇÃO ================= */
+const COLS = 16, ROWS = 10, TS = 64, W = COLS * TS, H = ROWS * TS;
+const RIVER = 7;
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+
+const MODES = {
+  junior: { label:'Júnior',           mult:0.5, money:1500, hearts:5, timeMult:1.4,  evGap:[28,40] },
+  chefe:  { label:'Engenheiro Chefe', mult:1,   money:900,  hearts:3, timeMult:0.85, evGap:[18,30] }
+};
+
+const PUB_NAMES = { escola:'Escola', praca:'Praça', banco:'Banco', policia:'Delegacia', prefeitura:'Prefeitura', aeroporto:'Aeroporto' };
+
+const TOOLS = {
+  estrada:   { cat:'vias',    name:'Estrada',    icon:'🛣️', cost:20,  key:'1', tip:'Ligue casas e prédios com ruas. Arraste para fazer várias.' },
+  ponte:     { cat:'vias',    name:'Ponte',      icon:'🌉', cost:45,  key:'2', tip:'Atravesse o rio. Precisa de uma estrada na margem.' },
+  poste:     { cat:'vias',    name:'Poste',      icon:'💡', cost:15,  key:'3', tip:'Ilumina a cidade à noite. Arraste para vários.' },
+  casa:      { cat:'moradia', name:'Casa',       icon:'🏠', cost:40,  key:'4', tip:'Mais casas = mais moradores. Arraste para vários.' },
+  andar:     { cat:'moradia', name:'+1 Andar',   icon:'🏢', cost:30,  key:'5', tip:'Até 3 andares por casa.' },
+  telhado:   { cat:'moradia', name:'Telhado',    icon:'🔺', cost:25,  key:'6', tip:'Casa com telhado paga impostos todo ciclo.' },
+  pintar:    { cat:'moradia', name:'Pintar',     icon:'🎨', cost:5,   key:'7', tip:'Escolha a cor acima e clique na casa.' },
+  arvore:    { cat:'cidade',  name:'Árvore',     icon:'🌳', cost:10,  key:'8', tip:'Traz verde e alegria. Arraste para plantar várias.' },
+  praca:     { cat:'cidade',  name:'Praça',      icon:'⛲', cost:60,  key:'9', tip:'Ponto de encontro com fonte.' },
+  escola:    { cat:'cidade',  name:'Escola',     icon:'🏫', cost:120, key:'0', tip:'Gera ônibus escolar. Fica melhor ao lado de uma rua.' },
+  banco:     { cat:'cidade',  name:'Banco',      icon:'🏦', cost:130, key:'',  tip:'Rende impostos extras.' },
+  policia:   { cat:'cidade',  name:'Delegacia',  icon:'🚓', cost:110, key:'',  tip:'Manda viaturas patrulhar.' },
+  prefeitura:{ cat:'cidade',  name:'Prefeitura', icon:'🏛️', cost:150, key:'',  tip:'Prestígio e impostos para a cidade.' },
+  aeroporto: { cat:'cidade',  name:'Aeroporto',  icon:'✈️', cost:200, key:'',  tip:'Um avião passa sobrevoando a cidade!' },
+  demolir:   { cat:'demolir', name:'Demolir',    icon:'🧹', cost:0,   key:'X', tip:'Devolve 50% do que foi gasto no terreno.' }
+};
+const KEYS = {};
+for (const [id, t] of Object.entries(TOOLS)) if (t.key) KEYS[t.key] = id;
+const TAB_NAMES = { vias:'🛣️ Vias & Luz', moradia:'🏠 Moradia', cidade:'🏛️ Cidade' };
+const DRAG = new Set(['estrada','poste','casa','arvore','demolir']);
+const PALETTE = ['#60a5fa','#facc15','#fb923c','#34d399','#c084fc','#f87171','#f5f5f4','#94a3b8'];
+
+const CONTRACTS = [
+  { name:'Primeira Rua', icon:'🛣️', desc:'Abra o caminho! Faça estradas e ilumine com postes.',
+    reqs:[{k:'road',n:4},{k:'lamp',n:2}], time:70, reward:200 },
+  { name:'Lar Doce Lar', icon:'🏠', desc:'Duas casas com telhado e uma árvore no quintal.',
+    reqs:[{k:'roofHouse',n:2},{k:'tree',n:1}], time:75, reward:280 },
+  { name:'Ponte da Esperança', icon:'🌉', desc:'Cruze o rio com uma ponte e una as margens.',
+    reqs:[{k:'road',n:4},{k:'bridge',n:1},{k:'house',n:1}], time:80, reward:350 },
+  { name:'Escola Perto de Casa', icon:'🏫', desc:'Uma escola ao lado de uma rua e uma casa com telhado.',
+    reqs:[{k:'schoolRoad'},{k:'roofHouse',n:1}], time:90, reward:420 },
+  { name:'Praça Feliz', icon:'⛲', desc:'Praça com fonte, três árvores e dois postes.',
+    reqs:[{k:'pub',kind:'praca',n:1},{k:'tree',n:3},{k:'lamp',n:2}], time:90, reward:450 },
+  { name:'Centro Cívico', icon:'🏛️', desc:'Prefeitura, banco e delegacia para a cidade crescer.',
+    reqs:[{k:'pub',kind:'prefeitura',n:1},{k:'pub',kind:'banco',n:1},{k:'pub',kind:'policia',n:1}], time:110, reward:600 },
+  { name:'Arranha-céu', icon:'🏢', desc:'Um prédio de 3 andares com telhado e iluminação.',
+    reqs:[{k:'tall',n:1},{k:'lamp',n:2}], time:100, reward:550 },
+  { name:'Grande Aeroporto', icon:'✈️', desc:'Aeroporto, casas com telhado e estradas para chegar.',
+    reqs:[{k:'pub',kind:'aeroporto',n:1},{k:'roofHouse',n:3},{k:'road',n:6}], time:120, reward:800 }
+];
+
+const DONE_TIP = {
+  estrada:'Rua aberta! Os carrinhos já podem passar. 🚗',
+  ponte:'Ponte pronta! A cidade agora está unida. 🌉',
+  poste:'Poste instalado. Aperte N e veja acender! 💡',
+  casa:'Casa construída! Coloque um telhado para ela pagar impostos. 🏠',
+  andar:'Mais um andar! Prédio cada vez mais alto. 🏢',
+  telhado:'Telhado no lugar. Agora a casa rende impostos! 🔺',
+  pintar:'Que cor linda! A rua ficou mais alegre. 🎨',
+  arvore:'Árvore plantada. Os moradores agradecem! 🌳',
+  praca:'Praça inaugurada com fonte! ⛲',
+  escola:'Escola aberta! O ônibus escolar já saiu. 🚌',
+  banco:'Banco inaugurado! Ele rende impostos extras. 🏦',
+  policia:'Delegacia pronta! Viaturas em patrulha. 🚓',
+  prefeitura:'Prefeitura inaugurada! A cidade cresce. 🏛️',
+  aeroporto:'Aeroporto pronto! Olhe o avião no céu. ✈️'
+};
+const TIPS = [
+  'Dica: ruas ligam casas e prédios aos carros e pedestres.',
+  'Dica: casa com telhado paga impostos a cada 10 segundos.',
+  'Dica: entregue a obra rápido para ganhar mais estrelas e dinheiro!',
+  'Dica: aperte N e veja os postes acenderem à noite.',
+  'Dica: arraste o mouse com uma ferramenta para construir vários de uma vez.',
+  'Dica: Demolir devolve metade do que foi gasto no terreno.'
+];
+
+/* ================= ESTADO ================= */
+const S = {
+  mode:'junior', mult:0.5, money:0, hearts:3, maxHearts:3,
+  grid:[], vehicles:[], peds:[], parts:[], texts:[], clouds:[], plane:null,
+  tool:'estrada', cat:'vias', color:PALETTE[0],
+  night:false, sound:true, paused:false, running:false,
+  phase:'menu', timeLeft:1, timeMax:1, between:0,
+  contractIdx:0, contract:null, done:0, failed:0,
+  hover:null, painting:false, lastPaint:null,
+  incomeT:0, eventT:30, rush:0, spawnT:0, checkT:0, tipT:0, elapsed:0
+};
+
+/* ================= UTILIDADES ================= */
+const $ = id => document.getElementById(id);
+const fmt = v => 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+const frac = v => v - Math.floor(v);
+const randRange = a => a[0] + Math.random() * (a[1] - a[0]);
+const priceOf = id => Math.max(1, Math.round(TOOLS[id].cost * S.mult));
+const isWalk = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS && (S.grid[r][c].t === 'road' || S.grid[r][c].t === 'bridge');
+const inside = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
+
+/* ================= ÁUDIO ================= */
+let AC = null;
+function ac() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+  if (AC && AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function beep(f, d = 0.12, type = 'sine', v = 0.12, when = 0) {
+  if (!S.sound) return;
+  const a = ac(); if (!a) return;
+  const t = a.currentTime + when;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+}
+const SFX = {
+  build()   { beep(190, 0.09, 'triangle', 0.12); },
+  coin()    { beep(988, 0.09, 'sine', 0.12); beep(1319, 0.2, 'sine', 0.12, 0.07); },
+  error()   { beep(150, 0.2, 'sawtooth', 0.05); },
+  click()   { beep(660, 0.05, 'square', 0.05); },
+  victory() { [523, 659, 784, 1046].forEach((f, i) => beep(f, 0.28, 'triangle', 0.13, i * 0.11)); }
+};
+
+/* ================= MUNDO ================= */
+function newGrid() {
+  const g = [];
+  for (let r = 0; r < ROWS; r++) {
+    const row = [];
+    for (let c = 0; c < COLS; c++) {
+      row.push({ t: c === RIVER ? 'river' : 'grass', floors: 0, roof: false, color: '#fb923c',
+                 lamp: false, tree: false, kind: null, spent: 0, seed: (r * COLS + c) * 0.137 + 0.31 });
+    }
+    g.push(row);
+  }
+  return g;
+}
+
+function demoCity() {
+  S.grid = newGrid();
+  const g = S.grid;
+  for (let c = 0; c < COLS; c++) {
+    if (c === RIVER) g[4][c].t = 'bridge';
+    else g[4][c].t = 'road';
+  }
+  const house = (r, c, f, col) => Object.assign(g[r][c], { t:'house', floors:f, roof:true, color:col });
+  house(3, 2, 1, '#f9a8d4'); house(3, 4, 2, '#fde68a'); house(5, 10, 3, '#93c5fd'); house(3, 12, 1, '#86efac');
+  g[5][1].tree = true; g[5][13].tree = true; g[3][8].tree = true;
+  g[3][6].lamp = true; g[5][5].lamp = true; g[5][11].lamp = true;
+  g[8][9].t = 'pub'; g[8][9].kind = 'escola';
+}
+
+/* ================= CONTRATOS ================= */
+function tally() {
+  const k = { road:0, lamp:0, tree:0, bridge:0, house:0, roofHouse:0, tall:0, roofed:0, pubs:0, pub:{} };
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = S.grid[r][c];
+    if (t.t === 'road') k.road++;
+    else if (t.t === 'bridge') k.bridge++;
+    if (t.lamp) k.lamp++;
+    if (t.tree) k.tree++;
+    if (t.t === 'house') {
+      k.house++;
+      if (t.roof) { k.roofHouse++; k.roofed++; if (t.floors >= 3) k.tall++; }
+    }
+    if (t.t === 'pub') { k.pub[t.kind] = (k.pub[t.kind] || 0) + 1; k.pubs++; }
+  }
+  return k;
+}
+function schoolNextToRoad() {
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = S.grid[r][c];
+    if (t.t === 'pub' && t.kind === 'escola') {
+      for (const [dr, dc] of DIRS) if (isWalk(r + dr, c + dc)) return true;
+    }
+  }
+  return false;
+}
+function have(q, k) {
+  switch (q.k) {
+    case 'road': return k.road;
+    case 'lamp': return k.lamp;
+    case 'tree': return k.tree;
+    case 'bridge': return k.bridge;
+    case 'house': return k.house;
+    case 'roofHouse': return k.roofHouse;
+    case 'tall': return k.tall;
+    case 'pub': return k.pub[q.kind] || 0;
+    case 'schoolRoad': return schoolNextToRoad() ? 1 : 0;
+  }
+  return 0;
+}
+function reqLabel(q) {
+  switch (q.k) {
+    case 'road': return `${q.n} estrada(s)`;
+    case 'lamp': return `${q.n} poste(s) de luz`;
+    case 'tree': return `${q.n} árvore(s)`;
+    case 'bridge': return `${q.n} ponte(s)`;
+    case 'house': return `${q.n} casa(s)`;
+    case 'roofHouse': return `${q.n} casa(s) com telhado`;
+    case 'tall': return `${q.n} prédio de 3 andares com telhado`;
+    case 'pub': return `${q.n} ${PUB_NAMES[q.kind]}`;
+    case 'schoolRoad': return 'Escola ao lado de uma estrada';
+  }
+  return '';
+}
+
+function loadContract() {
+  const len = CONTRACTS.length, base = CONTRACTS[S.contractIdx % len], cyc = Math.floor(S.contractIdx / len);
+  const reqs = base.reqs.map(q => ({ ...q, n: q.k === 'schoolRoad' ? 1 : (q.n || 1) + cyc }));
+  const timeMax = Math.max(25, Math.round(base.time * MODES[S.mode].timeMult * Math.max(0.7, 1 - 0.08 * cyc)));
+  S.contract = { ...base, reqs, cyc, reward: Math.round(base.reward * (1 + 0.25 * cyc)), timeMax };
+  S.timeMax = timeMax; S.timeLeft = timeMax; S.phase = 'play';
+  banner(`${base.icon} Obra ${S.contractIdx + 1}: ${base.name}`);
+  showTip(`${base.desc}`);
+  updateSide();
+}
+
+function checkContract() {
+  if (S.phase !== 'play' || !S.contract) return;
+  const k = tally();
+  if (S.contract.reqs.every(q => have(q, k) >= q.n)) completeContract();
+}
+
+function completeContract() {
+  const ratio = S.timeLeft / S.timeMax;
+  const stars = ratio >= 0.5 ? 3 : ratio >= 0.25 ? 2 : 1;
+  const reward = Math.round(S.contract.reward * [0.8, 1, 1.25][stars - 1]);
+  S.money += reward; S.done++;
+  S.phase = 'between'; S.between = 2.6;
+  SFX.victory(); celebrate();
+  banner(`🏆 Obra concluída! ${'★'.repeat(stars)} +${fmt(reward)}`);
+  showTip(['Ufa, deu certo!', 'Muito bem, Engenheiro!', 'Perfeito, parceiro! A cidade está incrível!'][stars - 1]);
+  addText(W / 2, H / 2, `+${fmt(reward)}`, '#facc15', 1.6);
+  updateSide();
+}
+
+function failContract() {
+  if (S.phase !== 'play') return;
+  S.hearts--; S.failed++;
+  SFX.error(); shake();
+  banner('⏰ Prazo estourou! −1 ❤️');
+  showTip('Não desanime! Próxima obra, e dessa vez mais rápido.');
+  updateHUD();
+  if (S.hearts <= 0) { gameOver(); return; }
+  S.phase = 'between'; S.between = 2.4;
+}
+
+function gameOver() {
+  S.phase = 'over'; S.running = false;
+  const best = Math.max(readBest(), S.done);
+  writeBest(best);
+  $('endSub').textContent = `Você ficou sem reputação na obra "${S.contract ? S.contract.name : ''}". Não desista, Engenheiro!`;
+  $('endDone').textContent = S.done;
+  $('endBest').textContent = best;
+  $('ovEnd').classList.remove('hidden');
+}
+
+function readBest() { try { return +localStorage.getItem('otto_best') || 0; } catch (e) { return 0; } }
+function writeBest(v) { try { localStorage.setItem('otto_best', String(v)); } catch (e) {} }
+
+/* ================= CONSTRUÇÃO ================= */
+function check(tool, r, c) {
+  const OK = { ok:true, msg:'' }, NO = m => ({ ok:false, msg:m });
+  const t = S.grid[r][c];
+  const empty = t.t === 'grass' && !t.lamp && !t.tree;
+  const busy = 'Terreno ocupado. Use Demolir antes.';
+  switch (tool) {
+    case 'estrada':
+      if (t.t === 'river') return NO('No rio só cabe uma ponte 🌉');
+      if (t.t === 'road') return NO('Já tem estrada aqui.');
+      if (!empty) return NO(busy);
+      break;
+    case 'ponte':
+      if (t.t !== 'river') return NO('Ponte só sobre o rio 🌊');
+      if (!(isWalk(r, c - 1) || isWalk(r, c + 1))) return NO('Coloque uma estrada na margem primeiro.');
+      break;
+    case 'poste':
+      if (t.t === 'river') return NO('Poste não fica no rio.');
+      if (t.t === 'house' || t.t === 'pub') return NO('Poste fica na rua ou no gramado.');
+      if (t.lamp) return NO('Já tem poste aqui.');
+      if (t.tree) return NO(busy);
+      break;
+    case 'casa':
+      if (!empty) return NO(t.t === 'river' ? 'Casa não fica no rio.' : busy);
+      break;
+    case 'andar':
+      if (t.t !== 'house') return NO('Escolha uma casa para subir um andar.');
+      if (t.floors >= 3) return NO('Altura máxima: 3 andares.');
+      break;
+    case 'telhado':
+      if (t.t !== 'house') return NO('Telhado vai em cima de casa.');
+      if (t.roof) return NO('Essa casa já tem telhado.');
+      break;
+    case 'pintar':
+      if (t.t !== 'house') return NO('Clique numa casa para pintar.');
+      if (t.color === S.color) return NO('Essa casa já está nessa cor.');
+      break;
+    case 'arvore':
+    case 'praca': case 'escola': case 'banco': case 'policia': case 'prefeitura': case 'aeroporto':
+      if (!empty) return NO(t.t === 'river' ? 'Isso não fica no rio.' : busy);
+      break;
+    case 'demolir':
+      if (t.t === 'river') return NO('O rio não se demole. 🌊');
+      if (t.t === 'grass' && !t.lamp && !t.tree) return NO('Nada aqui para demolir.');
+      return OK;
+  }
+  if (S.money < priceOf(tool)) return NO('Dinheiro insuficiente no cofre!');
+  return OK;
+}
+
+function refund(t) { return Math.floor((t.spent || 0) * 0.5); }
+
+function apply(tool, r, c, drag) {
+  const t = S.grid[r][c];
+  const x = (c + 0.5) * TS, y = (r + 0.5) * TS;
+  if (tool === 'demolir') {
+    const ref = refund(t);
+    S.money += ref;
+    const wasBridge = t.t === 'bridge';
+    Object.assign(t, { t: wasBridge ? 'river' : 'grass', floors:0, roof:false, lamp:false, tree:false, kind:null, spent:0 });
+    SFX.build(); burst(x, y, '#94a3b8', 14);
+    if (ref > 0) addText(x, y - 6, `+${fmt(ref)}`, '#86efac', 1);
+    if (!drag) showTip(`Demolido! Recuperou ${fmt(ref)}.`);
+    return;
+  }
+  const price = priceOf(tool);
+  S.money -= price; t.spent = (t.spent || 0) + price;
+  switch (tool) {
+    case 'estrada':  t.t = 'road'; break;
+    case 'ponte':    t.t = 'bridge'; break;
+    case 'poste':    t.lamp = true; break;
+    case 'casa':     Object.assign(t, { t:'house', floors:1, roof:false, color:S.color }); break;
+    case 'andar':    t.floors++; break;
+    case 'telhado':  t.roof = true; break;
+    case 'pintar':   t.color = S.color; break;
+    case 'arvore':   t.tree = true; break;
+    default:         t.t = 'pub'; t.kind = tool; break;
+  }
+  SFX.build();
+  burst(x, y, tool === 'pintar' ? S.color : tool === 'arvore' ? '#22c55e' : '#f59e0b', 12);
+  addText(x, y - 6, `-${fmt(price)}`, '#fecaca', 0.9);
+  if (!drag) showTip(DONE_TIP[tool] || '');
+}
+
+function act(r, c, drag) {
+  if (drag && !DRAG.has(S.tool)) return;
+  const res = check(S.tool, r, c);
+  if (!res.ok) {
+    if (!drag) { showTip(res.msg); SFX.error(); }
+    return;
+  }
+  apply(S.tool, r, c, drag);
+  updateHUD(); updateInfo(); checkContract(); updateSide();
+}
+
+/* ================= TRÂNSITO E PEDESTRES ================= */
+function randomWalkStart() {
+  const cells = [];
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (isWalk(r, c)) cells.push([r, c]);
+  if (!cells.length) return null;
+  const [r, c] = cells[(Math.random() * cells.length) | 0];
+  const opts = DIRS.filter(([dr, dc]) => isWalk(r + dr, c + dc));
+  const d = opts.length ? opts[(Math.random() * opts.length) | 0] : [0, 0];
+  return { r, c, dx: d[1], dy: d[0] };
+}
+
+function addVehicle(kind) {
+  const pos = randomWalkStart(); if (!pos) return;
+  const colors = ['#ef4444','#3b82f6','#10b981','#ec4899','#8b5cf6','#f97316','#14b8a6'];
+  const spd = { car: 0.9 + Math.random() * 0.4, truck: 0.6, bus: 0.6, police: 1.25 }[kind];
+  S.vehicles.push({
+    kind, r:pos.r, c:pos.c, pr:pos.r, pc:pos.c, p:0, spd, dx:pos.dx, dy:pos.dy,
+    color: kind === 'bus' ? '#facc15' : kind === 'police' ? '#f8fafc' : colors[(Math.random() * colors.length) | 0],
+    wob: Math.random() * 6
+  });
+}
+
+function addPed() {
+  const pos = randomWalkStart(); if (!pos) return;
+  const cols = ['#f472b6','#60a5fa','#34d399','#fbbf24','#a78bfa'];
+  S.peds.push({
+    kind:'ped', r:pos.r, c:pos.c, pr:pos.r, pc:pos.c, p:0, spd: 0.35 + Math.random() * 0.25,
+    dx:pos.dx, dy:pos.dy, color: cols[(Math.random() * cols.length) | 0], wob: Math.random() * 6
+  });
+}
+
+// Anda pelas estradas e pontes; no cruzamento escolhe um caminho e só retorna em becos sem saída.
+function stepEnt(e, dt) {
+  if (!isWalk(e.r, e.c)) return false;
+  e.p += e.spd * dt;
+  let guard = 0;
+  while (e.p >= 1 && guard++ < 4) {
+    e.p -= 1;
+    const opts = DIRS.filter(([dr, dc]) => isWalk(e.r + dr, e.c + dc));
+    if (!opts.length) return false;
+    const fwd = opts.filter(([dr, dc]) => !(e.r + dr === e.pr && e.c + dc === e.pc));
+    const pool = fwd.length ? fwd : opts;
+    const [dr, dc] = pool[(Math.random() * pool.length) | 0];
+    e.pr = e.r; e.pc = e.c; e.r += dr; e.c += dc; e.dx = dc; e.dy = dr;
+  }
+  if (e.p >= 1) e.p = 0.99;
+  return true;
+}
+
+function entPos(e) {
+  return {
+    x: (e.pc + (e.c - e.pc) * e.p + 0.5) * TS,
+    y: (e.pr + (e.r - e.pr) * e.p + 0.5) * TS
+  };
+}
+
+function spawnTick() {
+  let walk = 0, houses = 0, schools = 0, police = 0, airports = 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = S.grid[r][c];
+    if (t.t === 'road' || t.t === 'bridge') walk++;
+    if (t.t === 'house') houses++;
+    if (t.t === 'pub') {
+      if (t.kind === 'escola') schools++;
+      if (t.kind === 'policia') police++;
+      if (t.kind === 'aeroporto') airports++;
+    }
+  }
+  const cnt = k => S.vehicles.filter(v => v.kind === k).length;
+  if (walk >= 2) {
+    const carWant = Math.min(10, Math.floor(walk / 3));
+    if (cnt('car') + cnt('truck') < carWant) addVehicle(Math.random() < 0.2 ? 'truck' : 'car');
+    if (cnt('bus') < Math.min(2, schools)) addVehicle('bus');
+    if (cnt('police') < Math.min(2, police)) addVehicle('police');
+    if (S.peds.length < Math.min(10, houses * 2)) addPed();
+  }
+  if (airports > 0 && !S.plane) S.plane = { x: -160, y: 80, speed: 75 };
+  if (airports === 0) S.plane = null;
+}
+
+/* ================= EFEITOS ================= */
+function burst(x, y, color, n = 12) {
+  for (let i = 0; i < n; i++) {
+    const life = 0.6 + Math.random() * 0.5;
+    S.parts.push({ x, y, vx:(Math.random() - 0.5) * 180, vy:-Math.random() * 220 - 40, life, max:life,
+                   color, s: 3 + Math.random() * 3 });
+  }
+}
+function addText(x, y, text, color, life = 1.2) {
+  S.texts.push({ x, y, text, color, life, max: life });
+}
+function celebrate() {
+  try {
+    if (window.confetti) {
+      window.confetti({ particleCount:140, spread:75, origin:{ y:0.6 } });
+      window.confetti({ particleCount:70, angle:60, spread:55, origin:{ x:0, y:0.7 } });
+      window.confetti({ particleCount:70, angle:120, spread:55, origin:{ x:1, y:0.7 } });
+    }
+  } catch (e) {}
+  for (let i = 0; i < 36; i++) {
+    const life = 1.2 + Math.random();
+    S.parts.push({ x:Math.random() * W, y:Math.random() * H * 0.4, vx:(Math.random() - 0.5) * 220,
+                   vy:-Math.random() * 260, life, max:life, s:4 + Math.random() * 4,
+                   color:['#f87171','#facc15','#60a5fa','#4ade80','#c084fc'][(Math.random() * 5) | 0] });
+  }
+}
+function updateFx(dt) {
+  for (let i = S.parts.length - 1; i >= 0; i--) {
+    const p = S.parts[i];
+    p.vy += 520 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (p.life <= 0) S.parts.splice(i, 1);
+  }
+  for (let i = S.texts.length - 1; i >= 0; i--) {
+    const t = S.texts[i];
+    t.y -= 36 * dt; t.life -= dt;
+    if (t.life <= 0) S.texts.splice(i, 1);
+  }
+}
+function updateClouds(dt) {
+  for (const cl of S.clouds) { cl.x += cl.sp * dt; if (cl.x > W + 80) cl.x = -80; }
+}
+function updatePlane(dt) {
+  if (!S.plane) return;
+  S.plane.x += S.plane.speed * dt;
+  if (S.plane.x > W + 160) { S.plane.x = -160; S.plane.y = 50 + Math.random() * 120; }
+}
+
+function banner(msg) {
+  const b = $('banner');
+  b.textContent = msg; b.classList.add('show');
+  clearTimeout(banner._t);
+  banner._t = setTimeout(() => b.classList.remove('show'), 2600);
+}
+function showTip(msg) {
+  $('tipText').textContent = msg;
+  $('tip').classList.remove('off');
+  S.tipT = 7;
+}
+function shake() {
+  const cv = $('city');
+  cv.classList.remove('shake'); void cv.offsetWidth; cv.classList.add('shake');
+}
+
+/* ================= ECONOMIA E EVENTOS ================= */
+function payTaxes() {
+  const k = tally();
+  const tax = k.roofed * 6 + k.pubs * 12 + (k.pub.banco || 0) * 18;
+  if (tax <= 0) return;
+  S.money += tax;
+  addText(W / 2, 46, `+${fmt(tax)} impostos`, '#4ade80', 1.5);
+  SFX.coin();
+  updateHUD();
+}
+function triggerEvent() {
+  const k = tally(), roll = Math.random();
+  if (roll < 0.4 && k.road >= 3) {
+    S.rush = 12;
+    banner('🚦 Hora do rush! Carros mais rápidos por 12s');
+  } else if (roll < 0.75) {
+    S.money += 60; SFX.coin();
+    banner('🎉 Festival na cidade! +R$ 60');
+    addText(W / 2, H / 2, '+R$ 60', '#fde047', 1.6);
+  } else {
+    banner('👷 O Otto passou para ver a obra!');
+    showTip(TIPS[(Math.random() * TIPS.length) | 0]);
+  }
+  updateHUD();
+}
+
+/* ================= HUD / PAINÉIS ================= */
+function updateHUD() {
+  const k = tally();
+  const built = (() => { let n = 0; for (const row of S.grid) for (const t of row) if (t.t !== 'grass' && t.t !== 'river' || t.tree || t.lamp) n++; return n; })();
+  $('hMoney').textContent = fmt(S.money);
+  $('hHearts').textContent = '❤️'.repeat(Math.max(0, S.hearts)) + '🖤'.repeat(Math.max(0, S.maxHearts - S.hearts));
+  $('hDone').textContent = S.done;
+  $('hMode').textContent = MODES[S.mode].label;
+  $('stPop').textContent = 12 + k.house * 4 + k.pubs * 10;
+  $('stTax').textContent = fmt(k.roofed * 6 + k.pubs * 12 + (k.pub.banco || 0) * 18);
+  $('stBuilt').textContent = built;
+  $('stDone').textContent = S.done;
+}
+
+function updateSide() {
+  updateHUD();
+  if (!S.contract) return;
+  const c = S.contract;
+  $('obraTitle').textContent = `${c.icon} ${c.name}`;
+  $('obraDesc').textContent = c.desc;
+  const pct = Math.max(0, S.timeLeft / S.timeMax) * 100;
+  const bar = $('timerBar');
+  bar.style.width = pct + '%';
+  bar.style.background = pct > 50 ? 'linear-gradient(90deg,#22c55e,#84cc16)'
+                       : pct > 20 ? 'linear-gradient(90deg,#f59e0b,#eab308)'
+                       : 'linear-gradient(90deg,#ef4444,#f97316)';
+  $('timerTxt').textContent = S.phase === 'between' ? 'Próxima obra chegando...' : `⏱ ${Math.ceil(S.timeLeft)}s restantes`;
+  const k = tally();
+  $('reqs').innerHTML = c.reqs.map(q => {
+    const h = Math.min(have(q, k), q.n), d = h >= q.n;
+    return `<li class="${d ? 'done' : ''}"><span class="box">${d ? '✓' : ''}</span>${reqLabel(q)}<span class="prog">${h}/${q.n}</span></li>`;
+  }).join('');
+}
+
+function tileName(t) {
+  switch (t.t) {
+    case 'river': return 'Rio';
+    case 'road': return 'Estrada';
+    case 'bridge': return 'Ponte';
+    case 'house': return t.floors > 1 ? `Prédio de ${t.floors} andares` : 'Casa';
+    case 'pub': return PUB_NAMES[t.kind];
+  }
+  return t.tree ? 'Árvore' : 'Terreno livre';
+}
+function tileDetail(t) {
+  const p = [];
+  if (t.t === 'house') p.push(`${t.floors} andar(es)`, t.roof ? 'com telhado (paga impostos)' : 'sem telhado');
+  if (t.lamp) p.push('com poste de luz');
+  if (t.t === 'river') p.push('use uma ponte para atravessar');
+  return p.join(' · ') || '—';
+}
+function updateInfo() {
+  if (!S.hover || !S.grid.length) {
+    $('infoName').textContent = 'Terreno livre';
+    $('infoDetail').textContent = 'Passe o mouse sobre o mapa.';
+    $('infoAction').textContent = '';
+    return;
+  }
+  const { r, c } = S.hover, t = S.grid[r][c], T = TOOLS[S.tool];
+  $('infoName').textContent = tileName(t);
+  $('infoDetail').textContent = tileDetail(t);
+  const res = check(S.tool, r, c);
+  $('infoAction').innerHTML = res.ok
+    ? `<span style="color:#15803d">✔ ${T.name}: ${S.tool === 'demolir' ? 'devolve ' + fmt(refund(t)) : 'custa ' + fmt(priceOf(S.tool))}</span>`
+    : `<span style="color:#b91c1c">✖ ${res.msg}</span>`;
+}
+
+function renderTabs() {
+  const box = $('tabs'); box.innerHTML = '';
+  for (const [id, name] of Object.entries(TAB_NAMES)) {
+    const b = document.createElement('button');
+    b.className = 'tab' + (S.cat === id ? ' on' : '');
+    b.textContent = name;
+    b.onclick = () => {
+      SFX.click();
+      S.cat = id;
+      S.tool = Object.keys(TOOLS).find(k => TOOLS[k].cat === id);
+      renderTabs(); renderTools(); renderPalette(); updateInfo();
+    };
+    box.appendChild(b);
+  }
+}
+function renderTools() {
+  const box = $('tools'); box.innerHTML = '';
+  const items = Object.entries(TOOLS).filter(([, t]) => t.cat === S.cat);
+  items.push(['demolir', TOOLS.demolir]);
+  for (const [id, t] of items) {
+    const b = document.createElement('button');
+    b.className = 'tool' + (id === 'demolir' ? ' danger' : '') + (S.tool === id ? ' on' : '');
+    const cost = id === 'demolir' ? 'devolve 50%' : fmt(priceOf(id));
+    b.innerHTML = (t.key ? `<span class="kb">${t.key}</span>` : '') +
+                  `<span class="ic">${t.icon}</span><span class="nm">${t.name}</span><span class="cs">${cost}</span>`;
+    b.title = t.tip;
+    b.onclick = () => selectTool(id);
+    box.appendChild(b);
+  }
+}
+function renderPalette() {
+  const box = $('palette');
+  if (S.cat !== 'moradia') { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = '<span class="lbl">🎨 Cor da casa:</span>';
+  for (const col of PALETTE) {
+    const s = document.createElement('button');
+    s.className = 'sw' + (S.color === col ? ' on' : '');
+    s.style.background = col;
+    s.onclick = () => { S.color = col; selectTool('pintar'); };
+    box.appendChild(s);
+  }
+}
+function selectTool(id) {
+  if (!TOOLS[id]) return;
+  SFX.click();
+  S.tool = id;
+  if (TOOLS[id].cat !== 'demolir') S.cat = TOOLS[id].cat;
+  renderTabs(); renderTools(); renderPalette(); updateInfo();
+}
+
+/* ================= FLUXO DO JOGO ================= */
+function startGame() {
+  ac();
+  const m = MODES[S.mode];
+  S.mult = m.mult; S.money = m.money; S.maxHearts = m.hearts; S.hearts = m.hearts;
+  S.grid = newGrid();
+  S.vehicles = []; S.peds = []; S.parts = []; S.texts = []; S.plane = null;
+  S.contractIdx = 0; S.done = 0; S.failed = 0; S.paused = false;
+  S.tool = 'estrada'; S.cat = 'vias';
+  S.running = true; S.phase = 'play';
+  S.incomeT = 0; S.eventT = randRange(m.evGap); S.spawnT = 0; S.checkT = 0; S.rush = 0;
+  $('ovStart').classList.add('hidden');
+  $('ovEnd').classList.add('hidden');
+  $('pauseMark').classList.add('hidden');
+  renderTabs(); renderTools(); renderPalette(); updateHUD(); updateInfo();
+  loadContract();
+  showTip('Vamos construir! Comece com uma estrada saindo da margem do rio. 🛣️');
+}
+
+function toMenu() {
+  S.running = false; S.phase = 'menu'; S.paused = false;
+  $('pauseMark').classList.add('hidden');
+  $('ovEnd').classList.add('hidden');
+  $('ovStart').classList.remove('hidden');
+  demoCity();
+  S.vehicles = []; S.peds = []; S.plane = null;
+}
+
+function togglePause() {
+  if (!S.running) return;
+  S.paused = !S.paused;
+  $('pauseMark').classList.toggle('hidden', !S.paused);
+  $('bPause').textContent = S.paused ? '▶️' : '⏸️';
+}
+function toggleNight() {
+  S.night = !S.night;
+  $('bNight').textContent = S.night ? '🌙' : '☀️';
+  banner(S.night ? '🌙 Anoiteceu! Os postes acenderam.' : '☀️ Bom dia! Hora de construir.');
+  SFX.click();
+}
+function toggleSound() {
+  S.sound = !S.sound;
+  $('bSound').textContent = S.sound ? '🔊' : '🔇';
+}
+
+/* ================= LOOP ================= */
+function update(dt) {
+  S.elapsed += dt;
+  if (S.running) {
+    if (S.phase === 'play') {
+      S.timeLeft -= dt;
+      if (S.timeLeft <= 0) { S.timeLeft = 0; failContract(); }
+    } else if (S.phase === 'between') {
+      S.between -= dt;
+      if (S.between <= 0) { S.contractIdx++; loadContract(); }
+    }
+    S.incomeT += dt; if (S.incomeT >= 10) { S.incomeT = 0; payTaxes(); }
+    S.eventT -= dt; if (S.eventT <= 0) { S.eventT = randRange(MODES[S.mode].evGap); triggerEvent(); }
+    if (S.rush > 0) S.rush -= dt;
+    S.checkT -= dt; if (S.checkT <= 0) { S.checkT = 0.25; checkContract(); updateSide(); }
+    if (S.tipT > 0) { S.tipT -= dt; if (S.tipT <= 0) $('tip').classList.add('off'); }
+  }
+  S.spawnT -= dt; if (S.spawnT <= 0) { S.spawnT = 0.9; spawnTick(); }
+  S.vehicles = S.vehicles.filter(v => stepEnt(v, dt * (S.rush > 0 && v.kind !== 'bus' ? 1.6 : 1)));
+  S.peds = S.peds.filter(p => stepEnt(p, dt));
+  updatePlane(dt); updateFx(dt); updateClouds(dt);
+}
+
+const canvas = $('city');
+const ctx = canvas.getContext('2d');
+let SC = 1;
+
+function circle(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawGrass(x, y, seed) {
+  const n = S.night;
+  ctx.fillStyle = (((seed * 100) | 0) % 2) ? (n ? '#2c6e46' : '#8ee89c') : (n ? '#276040' : '#7fdc8c');
+  ctx.fillRect(x, y, TS, TS);
+  ctx.fillStyle = n ? '#1f4d33' : '#63c77a';
+  for (let i = 0; i < 3; i++) {
+    const px = x + 6 + frac(seed * (i + 3) * 37.7) * (TS - 12);
+    const py = y + 6 + frac(seed * (i + 5) * 19.3) * (TS - 12);
+    ctx.fillRect(px, py, 3, 3);
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, TS - 1, TS - 1);
+}
+
+function drawWater(x, y, r, tm) {
+  const n = S.night;
+  const g = ctx.createLinearGradient(0, y, 0, y + TS);
+  g.addColorStop(0, n ? '#1e40af' : '#38bdf8');
+  g.addColorStop(1, n ? '#172554' : '#0284c7');
+  ctx.fillStyle = g; ctx.fillRect(x, y, TS, TS);
+  ctx.strokeStyle = n ? 'rgba(147,197,253,0.45)' : 'rgba(255,255,255,0.6)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 2; i++) {
+    const base = y + 18 + i * 26, ph = tm * 2 + r * 0.7 + i * 1.8;
+    ctx.beginPath();
+    for (let px = 0; px <= TS; px += 4) {
+      const yy = base + Math.sin(px * 0.25 + ph) * 2.2;
+      if (px === 0) ctx.moveTo(x + px, yy); else ctx.lineTo(x + px, yy);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawBridge(x, y) {
+  const n = S.night;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(x, y + 20, TS, 28);
+  ctx.fillStyle = n ? '#78350f' : '#b45309'; ctx.fillRect(x, y + 18, TS, 28);
+  ctx.fillStyle = n ? '#92400e' : '#d97706';
+  for (let px = x + 4; px < x + TS; px += 9) ctx.fillRect(px, y + 18, 4, 28);
+  ctx.fillStyle = n ? '#a16207' : '#f59e0b';
+  ctx.fillRect(x, y + 14, TS, 4); ctx.fillRect(x, y + 46, TS, 4);
+  ctx.fillRect(x + 2, y + 12, 4, 38); ctx.fillRect(x + TS - 6, y + 12, 4, 38);
+}
+
+function drawRoad(r, c, x, y) {
+  ctx.fillStyle = S.night ? '#1e293b' : '#4b5563';
+  ctx.fillRect(x, y, TS, TS);
+  ctx.strokeStyle = '#fde047'; ctx.lineWidth = 3; ctx.setLineDash([8, 7]);
+  const cx = x + TS / 2, cy = y + TS / 2;
+  ctx.beginPath();
+  if (isWalk(r, c - 1)) { ctx.moveTo(x, cy); ctx.lineTo(cx, cy); }
+  if (isWalk(r, c + 1)) { ctx.moveTo(cx, cy); ctx.lineTo(x + TS, cy); }
+  if (isWalk(r - 1, c)) { ctx.moveTo(cx, y); ctx.lineTo(cx, cy); }
+  if (isWalk(r + 1, c)) { ctx.moveTo(cx, cy); ctx.lineTo(cx, y + TS); }
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawHouse(t, x, y) {
+  const w = TS * 0.68, x0 = x + (TS - w) / 2, FH = 15, base = y + TS - 6;
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath(); ctx.ellipse(x + TS / 2, base + 1, w * 0.56, 4, 0, 0, Math.PI * 2); ctx.fill();
+  const n = Math.max(1, t.floors);
+  for (let f = 0; f < n; f++) {
+    const fy = base - (f + 1) * FH;
+    ctx.fillStyle = t.color || '#fb923c';
+    ctx.fillRect(x0, fy, w, FH);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(x0, fy + FH - 3, w, 3);
+    for (const wx of [x0 + 6, x0 + w - 16]) {
+      ctx.fillStyle = S.night ? '#fde68a' : '#e0f2fe';
+      ctx.fillRect(wx, fy + 4, 10, 7);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(wx + 4.5, fy + 4, 1, 7);
+    }
+    if (f === 0) { ctx.fillStyle = '#78350f'; ctx.fillRect(x + TS / 2 - 4, base - 11, 8, 11); }
+  }
+  const topY = base - n * FH;
+  if (t.roof) {
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    ctx.moveTo(x0 - 4, topY + 1); ctx.lineTo(x + TS / 2, topY - 14); ctx.lineTo(x0 + w + 4, topY + 1);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#991b1b'; ctx.fillRect(x0 - 4, topY, w + 8, 3);
+  } else {
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+    ctx.strokeRect(x0 - 3, topY - 4, w + 6, 4);
+    ctx.setLineDash([]);
+  }
+}
+
+function drawPub(kind, x, y, tm) {
+  const n = S.night, base = y + TS - 6, cx = x + TS / 2, cy = y + TS / 2;
+  const shadow = w => { ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(cx, base + 1, w, 4, 0, 0, Math.PI * 2); ctx.fill(); };
+  switch (kind) {
+    case 'escola': {
+      shadow(TS * 0.4);
+      ctx.fillStyle = '#fbbf24'; ctx.fillRect(x + 8, base - 28, TS - 16, 28);
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath(); ctx.moveTo(x + 5, base - 28); ctx.lineTo(cx, base - 40); ctx.lineTo(x + TS - 5, base - 28); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#78350f'; ctx.fillRect(cx - 5, base - 12, 10, 12);
+      ctx.fillStyle = '#fff'; circle(cx, base - 20, 4);
+      ctx.fillStyle = '#475569'; ctx.fillRect(x + TS - 12, base - 50, 2, 22);
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(x + TS - 10, base - 50, 8, 6);
+      break;
+    }
+    case 'praca': {
+      ctx.fillStyle = n ? '#57534e' : '#e7e5e4';
+      ctx.beginPath(); ctx.ellipse(cx, cy + 4, TS * 0.42, TS * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = n ? '#0c4a6e' : '#38bdf8';
+      ctx.beginPath(); ctx.ellipse(cx, cy + 4, TS * 0.28, TS * 0.15, 0, 0, Math.PI * 2); ctx.fill();
+      const h = (tm * 1.6) % 1;
+      ctx.fillStyle = '#fff'; ctx.globalAlpha = 1 - h; circle(cx, cy - 2 - h * 14, 3); ctx.globalAlpha = 1;
+      break;
+    }
+    case 'banco': {
+      shadow(TS * 0.4);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(x + 8, base - 34, TS - 16, 34);
+      ctx.fillStyle = '#e0f2fe'; ctx.fillRect(x + 6, base - 38, TS - 12, 5);
+      ctx.fillStyle = '#bae6fd';
+      for (const px of [x + 11, x + TS - 15]) ctx.fillRect(px, base - 30, 4, 26);
+      ctx.fillStyle = '#facc15'; ctx.font = 'bold 15px Fredoka, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('$', cx, base - 10); ctx.textAlign = 'left';
+      break;
+    }
+    case 'policia': {
+      shadow(TS * 0.4);
+      ctx.fillStyle = '#1e3a8a'; ctx.fillRect(x + 8, base - 32, TS - 16, 32);
+      ctx.fillStyle = '#bfdbfe'; ctx.fillRect(x + 14, base - 24, 8, 8); ctx.fillRect(x + TS - 22, base - 24, 8, 8);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(cx - 5, base - 12, 10, 12);
+      const fl = Math.floor(tm * 5) % 2 === 0;
+      ctx.fillStyle = fl ? '#ef4444' : '#3b82f6'; ctx.fillRect(cx - 8, base - 40, 6, 6);
+      ctx.fillStyle = fl ? '#3b82f6' : '#ef4444'; ctx.fillRect(cx + 2, base - 40, 6, 6);
+      break;
+    }
+    case 'prefeitura': {
+      shadow(TS * 0.42);
+      ctx.fillStyle = '#f1f5f9'; ctx.fillRect(x + 6, base - 28, TS - 12, 28);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath(); ctx.moveTo(x + 4, base - 28); ctx.lineTo(cx, base - 38); ctx.lineTo(x + TS - 4, base - 28); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#94a3b8';
+      for (const px of [x + 10, x + 18, x + TS - 22, x + TS - 14]) ctx.fillRect(px, base - 22, 3, 22);
+      ctx.fillStyle = '#78350f'; ctx.fillRect(cx - 4, base - 10, 8, 10);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(cx - 1, base - 50, 2, 14);
+      ctx.fillStyle = '#22c55e'; ctx.fillRect(cx + 1, base - 50, 9, 6);
+      break;
+    }
+    case 'aeroporto': {
+      ctx.fillStyle = '#334155'; ctx.fillRect(x, y, TS, TS);
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(x + 4, cy); ctx.lineTo(x + TS - 20, cy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#f97316'; ctx.fillRect(x + TS - 16, y + 8, 10, 16);
+      ctx.fillStyle = '#fde68a'; ctx.fillRect(x + TS - 18, y + 6, 14, 4);
+      break;
+    }
+  }
+}
+
+function drawTree(x, y) {
+  const n = S.night, cx = x + TS / 2, by = y + TS - 6;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(cx, by + 1, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#78350f'; ctx.fillRect(cx - 3, by - 16, 6, 16);
+  ctx.fillStyle = n ? '#166534' : '#16a34a';
+  circle(cx, by - 26, 14); circle(cx - 9, by - 18, 10); circle(cx + 9, by - 18, 10);
+  ctx.fillStyle = n ? '#14532d' : '#4ade80'; circle(cx - 4, by - 31, 5);
+  ctx.fillStyle = '#f472b6'; circle(cx + 7, by - 22, 2.2); circle(cx - 8, by - 14, 2.2);
+}
+
+function drawLamp(x, y) {
+  const px = x + TS - 14;
+  ctx.fillStyle = '#64748b'; ctx.fillRect(px, y + 14, 3, TS - 20);
+  ctx.fillStyle = S.night ? '#fef08a' : '#f8fafc'; circle(px + 1.5, y + 12, 5);
+}
+
+function drawTile(t, r, c, tm) {
+  const x = c * TS, y = r * TS;
+  if (t.t === 'river') { drawWater(x, y, r, tm); }
+  else if (t.t === 'bridge') { drawWater(x, y, r, tm); drawBridge(x, y); }
+  else {
+    drawGrass(x, y, t.seed);
+    if (t.t === 'road') drawRoad(r, c, x, y);
+    else if (t.t === 'house') drawHouse(t, x, y);
+    else if (t.t === 'pub') drawPub(t.kind, x, y, tm);
+  }
+  if (t.tree) drawTree(x, y);
+  if (t.lamp) drawLamp(x, y);
+}
+
+function drawVehicle(v, tm) {
+  const { x, y } = entPos(v);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.atan2(v.dy, v.dx));
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath(); ctx.ellipse(0, 7, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  if (v.kind === 'car' || v.kind === 'police') {
+    ctx.fillStyle = v.color;
+    roundRect(-12, -7, 24, 14, 4); ctx.fill();
+    if (v.kind === 'police') { ctx.fillStyle = '#1d4ed8'; ctx.fillRect(-12, -1.5, 24, 3); }
+    ctx.fillStyle = 'rgba(191,219,254,0.9)';
+    roundRect(2, -5, 7, 10, 2); ctx.fill();
+    roundRect(-7, -5, 6, 10, 2); ctx.fill();
+    ctx.fillStyle = '#fef9c3'; circle(12, -4, 1.8); circle(12, 4, 1.8);
+    if (v.kind === 'police') {
+      const fl = Math.floor(tm * 7) % 2 === 0;
+      ctx.fillStyle = fl ? '#ef4444' : '#3b82f6'; ctx.fillRect(-3, -10, 6, 3);
+    }
+  } else if (v.kind === 'truck') {
+    ctx.fillStyle = '#e2e8f0'; roundRect(-15, -8, 30, 16, 3); ctx.fill();
+    ctx.fillStyle = v.color; roundRect(6, -8, 9, 16, 3); ctx.fill();
+    ctx.fillStyle = 'rgba(191,219,254,0.9)'; ctx.fillRect(12, -5, 3, 10);
+  } else if (v.kind === 'bus') {
+    ctx.fillStyle = '#facc15'; roundRect(-17, -8, 34, 16, 4); ctx.fill();
+    ctx.fillStyle = '#fef08a';
+    for (let i = 0; i < 4; i++) ctx.fillRect(-13 + i * 6, -5, 4, 10);
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(13, -6, 3, 12);
+  }
+  ctx.restore();
+}
+
+function drawPed(p, tm) {
+  const { x, y } = entPos(p);
+  const bob = Math.sin(tm * 12 + p.wob) * 1.2;
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath(); ctx.ellipse(x, y + 6, 3.5, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = p.color; ctx.fillRect(x - 3, y - 4 + bob, 6, 8);
+  ctx.fillStyle = '#fde7c9'; circle(x, y - 7 + bob, 3);
+}
+
+function drawPlane(pl, tm) {
+  const x = pl.x, y = pl.y + Math.sin(tm * 2) * 4;
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(1.25, 1.25);
+  ctx.fillStyle = '#f97316'; ctx.fillRect(-6, -16, 10, 32);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(0, 0, 20, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(-24, -9); ctx.lineTo(-19, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  for (let i = 0; i < 4; i++) ctx.fillRect(2 + i * 4, -1.5, 2, 2.5);
+  ctx.restore();
+}
+
+function drawClouds() {
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  for (const cl of S.clouds) {
+    circle(cl.x, cl.y, cl.s * 0.4);
+    circle(cl.x + cl.s * 0.45, cl.y - cl.s * 0.15, cl.s * 0.5);
+    circle(cl.x + cl.s * 0.9, cl.y, cl.s * 0.36);
+  }
+}
+
+function drawHover() {
+  if (!S.hover || !S.running) return;
+  const { r, c } = S.hover, x = c * TS, y = r * TS;
+  const res = check(S.tool, r, c);
+  ctx.save();
+  ctx.strokeStyle = res.ok ? '#22c55e' : '#ef4444';
+  ctx.lineWidth = 3;
+  ctx.setLineDash(res.ok ? [] : [6, 4]);
+  roundRect(x + 3, y + 3, TS - 6, TS - 6, 10); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 0.6;
+  ctx.font = '30px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(TOOLS[S.tool].icon, x + TS / 2, y + TS / 2 - 2);
+  ctx.restore();
+}
+
+function drawFx() {
+  for (const p of S.parts) {
+    ctx.globalAlpha = Math.max(0, p.life / p.max);
+    ctx.fillStyle = p.color; circle(p.x, p.y, p.s);
+  }
+  ctx.globalAlpha = 1;
+  ctx.font = 'bold 17px Fredoka, "Segoe UI", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const tx of S.texts) {
+    ctx.globalAlpha = Math.min(1, (tx.life / tx.max) * 1.4);
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(15,23,42,0.85)';
+    ctx.strokeText(tx.text, tx.x, tx.y);
+    ctx.fillStyle = tx.color; ctx.fillText(tx.text, tx.x, tx.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function render(tm) {
+  ctx.setTransform(SC, 0, 0, SC, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) drawTile(S.grid[r][c], r, c, tm);
+  for (const v of S.vehicles) drawVehicle(v, tm);
+  for (const p of S.peds) drawPed(p, tm);
+  if (S.plane) drawPlane(S.plane, tm);
+
+  if (S.night) {
+    ctx.fillStyle = 'rgba(12,20,56,0.46)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!S.grid[r][c].lamp) continue;
+      const px = c * TS + TS - 12.5, py = r * TS + 12;
+      const g = ctx.createRadialGradient(px, py, 2, px, py, 78);
+      g.addColorStop(0, 'rgba(253,224,71,0.55)');
+      g.addColorStop(1, 'rgba(253,224,71,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(px - 78, py - 78, 156, 156);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  } else {
+    drawClouds();
+  }
+
+  drawHover();
+  drawFx();
+}
+
+let last = 0;
+function frame(ts) {
+  const dt = Math.min(0.05, Math.max(0, (ts - last) / 1000));
+  last = ts;
+  if (!S.paused) update(dt);
+  render(ts / 1000);
+  requestAnimationFrame(frame);
+}
+
+function fit() {
+  const rect = $('stage').getBoundingClientRect();
+  const availW = Math.max(200, rect.width - 28), availH = Math.max(160, rect.height - 28);
+  const s = Math.min(availW / W, availH / H);
+  const cw = Math.floor(W * s), ch = Math.floor(H * s);
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.style.width = cw + 'px';
+  canvas.style.height = ch + 'px';
+  canvas.width = Math.round(cw * dpr);
+  canvas.height = Math.round(ch * dpr);
+  SC = canvas.width / W;
+}
+
+function toTile(e) {
+  const rect = canvas.getBoundingClientRect();
+  const lx = (e.clientX - rect.left) / rect.width * W;
+  const ly = (e.clientY - rect.top) / rect.height * H;
+  const c = Math.floor(lx / TS), r = Math.floor(ly / TS);
+  return inside(r, c) ? { r, c } : null;
+}
+
+/* ================= EVENTOS DE ENTRADA ================= */
+canvas.addEventListener('pointerdown', e => {
+  if (!S.running || S.paused) return;
+  const p = toTile(e);
+  if (!p) return;
+  ac();
+  S.painting = true; S.lastPaint = p;
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  act(p.r, p.c, false);
+});
+canvas.addEventListener('pointermove', e => {
+  const p = toTile(e);
+  S.hover = p;
+  if (S.painting && p && S.running && !S.paused &&
+      (!S.lastPaint || S.lastPaint.r !== p.r || S.lastPaint.c !== p.c)) {
+    S.lastPaint = p;
+    act(p.r, p.c, true);
+  }
+  updateInfo();
+});
+canvas.addEventListener('pointerleave', () => { S.hover = null; updateInfo(); });
+window.addEventListener('pointerup', () => { S.painting = false; S.lastPaint = null; });
+
+window.addEventListener('keydown', e => {
+  if (!S.running) return;
+  const k = e.key.toUpperCase();
+  if (k === 'P') togglePause();
+  else if (k === 'N') toggleNight();
+  else if (k === 'M') toggleSound();
+  else if (KEYS[k] && !e.ctrlKey && !e.metaKey) selectTool(KEYS[k]);
+  else if (e.key === 'Delete' || e.key === 'Backspace') selectTool('demolir');
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.running && !S.paused) togglePause();
+});
+
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
+  S.mode = b.dataset.mode;
+  document.querySelectorAll('.mode').forEach(x => x.classList.toggle('on', x === b));
+  SFX.click();
+}));
+$('bPlay').addEventListener('click', () => { SFX.click(); startGame(); });
+$('bAgain').addEventListener('click', () => { SFX.click(); startGame(); });
+$('bMenu').addEventListener('click', () => { SFX.click(); toMenu(); });
+$('bMenu2').addEventListener('click', () => { SFX.click(); toMenu(); });
+$('bPause').addEventListener('click', togglePause);
+$('bNight').addEventListener('click', toggleNight);
+$('bSound').addEventListener('click', toggleSound);
+
+/* ================= ABERTURA ================= */
+// Dura no mínimo 5,6 s e só termina quando a página também estiver carregada.
+function runIntro() {
+  const DUR = 5600;
+  const steps = ['Preparando o canteiro...', 'Afiando as ferramentas...', 'Chamando os caminhões...',
+                 'Desenhando a planta da cidade...', 'Tudo pronto, Engenheiro!'];
+  const bar = $('introBar'), txt = $('introTxt'), pct = $('introPct');
+  const t0 = performance.now();
+  let loaded = document.readyState === 'complete';
+  if (!loaded) window.addEventListener('load', () => { loaded = true; }, { once: true });
+  const step = now => {
+    const p = Math.min(1, (now - t0) / DUR);
+    const shown = (p >= 1 && !loaded) ? 0.99 : p;
+    bar.style.width = (shown * 100) + '%';
+    pct.textContent = Math.floor(shown * 100) + '%';
+    txt.textContent = steps[Math.min(steps.length - 1, Math.floor(shown * steps.length))];
+    if (p >= 1 && loaded) finishIntro();
+    else requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function finishIntro() {
+  const el = $('ovIntro');
+  el.classList.add('out');
+  setTimeout(() => { el.classList.add('hidden'); $('ovStart').classList.remove('hidden'); }, 700);
+}
+
+/* ================= BOOT ================= */
+S.clouds = Array.from({ length: 5 }, () => ({
+  x: Math.random() * W, y: 20 + Math.random() * 90, s: 26 + Math.random() * 26, sp: 5 + Math.random() * 8
+}));
+demoCity();
+S.mult = MODES.junior.mult; S.maxHearts = MODES.junior.hearts; S.hearts = MODES.junior.hearts; S.money = MODES.junior.money;
+renderTabs(); renderTools(); renderPalette(); updateHUD(); updateInfo();
+fit();
+if (window.ResizeObserver) new ResizeObserver(fit).observe($('stage'));
+window.addEventListener('resize', fit);
+requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
+runIntro();
+})();
+</script>
+</body>
+</html>
