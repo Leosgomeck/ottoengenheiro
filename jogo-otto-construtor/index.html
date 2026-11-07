@@ -365,7 +365,7 @@ const MODES = {
   chefe:  { label:'Engenheiro Chefe', mult:1,   money:900,  hearts:3, timeMult:0.85, evGap:[18,30] }
 };
 
-const PUB_NAMES = { escola:'Escola', praca:'Praça', banco:'Banco', policia:'Delegacia', prefeitura:'Prefeitura', aeroporto:'Aeroporto' };
+const PUB_NAMES = { escola:'Escola', praca:'Praça', banco:'Banco', policia:'Delegacia', prefeitura:'Prefeitura', aeroporto:'Aeroporto', galpao17:'Galpão 17', lanchonete:'Lanchonete', cemiterio:'Cemitério', oficina:'Oficina', fabrica:'Fábrica', igreja:'Igreja', posto:'Posto de Gasolina', farmacia:'Farmácia' };
 
 const TOOLS = {
   estrada:   { cat:'vias',    name:'Estrada',    icon:'🛣️', cost:20,  key:'1', tip:'Ligue casas e prédios com ruas. Arraste para fazer várias.' },
@@ -380,8 +380,16 @@ const TOOLS = {
   escola:    { cat:'cidade',  name:'Escola',     icon:'🏫', cost:120, key:'0', tip:'Gera ônibus escolar. Fica melhor ao lado de uma rua.' },
   banco:     { cat:'cidade',  name:'Banco',      icon:'🏦', cost:130, key:'',  tip:'Rende impostos extras.' },
   policia:   { cat:'cidade',  name:'Delegacia',  icon:'🚓', cost:110, key:'',  tip:'Manda viaturas patrulhar.' },
-  prefeitura:{ cat:'cidade',  name:'Prefeitura', icon:'🏛️', cost:150, key:'',  tip:'Prestígio e impostos para a cidade.' },
-  aeroporto: { cat:'cidade',  name:'Aeroporto',  icon:'✈️', cost:200, key:'',  tip:'Um avião passa sobrevoando a cidade!' },
+  prefeitura:{ cat:'cidade',  name:'Prefeitura', icon:'🏛️', cost:150, key:'',  max:1, color:'#e2e8f0', tip:'Prestígio e impostos para a cidade. Só 1 por cidade.' },
+  aeroporto: { cat:'cidade',  name:'Aeroporto',  icon:'✈️', cost:200, key:'',  max:2, color:'#cbd5e1', tip:'Um avião passa sobrevoando a cidade! Até 2 por cidade.' },
+  galpao17:  { cat:'cidade',  name:'Galpão 17',  icon:'🎸', cost:180, key:'',  max:1, color:'#312e81', tip:'Casa de rock! Só pode ter 1 na cidade.' },
+  lanchonete:{ cat:'cidade',  name:'Lanchonete', icon:'🍔', cost:60,  key:'',  color:'#f97316', tip:'Lanche para os moradores e impostos extras.' },
+  cemiterio: { cat:'cidade',  name:'Cemitério',  icon:'🪦', cost:90,  key:'',  max:2, color:'#64748b', tip:'Um lugar de paz. Até 2 por cidade.' },
+  oficina:   { cat:'cidade',  name:'Oficina',    icon:'🔧', cost:110, key:'',  color:'#0ea5e9', tip:'Oficina de carros para a cidade rodar bem.' },
+  fabrica:   { cat:'cidade',  name:'Fábrica',    icon:'🏭', cost:220, key:'',  color:'#78716c', tip:'Gera empregos e impostos extras.' },
+  igreja:    { cat:'cidade',  name:'Igreja',     icon:'⛪', cost:140, key:'',  max:5, color:'#fef3c7', tip:'Ponto de fé e encontro. Até 5 por cidade.' },
+  posto:     { cat:'cidade',  name:'Posto de Gasolina', icon:'⛽', cost:80, key:'', max:6, color:'#dc2626', tip:'Abastece os carros. Até 6 por cidade.' },
+  farmacia:  { cat:'cidade',  name:'Farmácia',   icon:'💊', cost:70,  key:'',  max:6, color:'#10b981', tip:'Cuida da saúde dos moradores. Até 6 por cidade.' },
   demolir:   { cat:'demolir', name:'Demolir',    icon:'🧹', cost:0,   key:'X', tip:'Devolve 50% do que foi gasto no terreno.' }
 };
 const KEYS = {};
@@ -423,7 +431,15 @@ const DONE_TIP = {
   banco:'Banco inaugurado! Ele rende impostos extras. 🏦',
   policia:'Delegacia pronta! Viaturas em patrulha. 🚓',
   prefeitura:'Prefeitura inaugurada! A cidade cresce. 🏛️',
-  aeroporto:'Aeroporto pronto! Olhe o avião no céu. ✈️'
+  aeroporto:'Aeroporto pronto! Olhe o avião no céu. ✈️',
+  galpao17:'Galpão 17 no ar! O rock chegou à cidade. 🎸',
+  lanchonete:'Lanchonete aberta! Cheiro de hambúrguer por todo lado. 🍔',
+  cemiterio:'Cemitério construído. Um lugar de respeito. 🪦',
+  oficina:'Oficina pronta! Os carros voltam a rodar. 🔧',
+  fabrica:'Fábrica em funcionamento! Mais empregos e impostos. 🏭',
+  igreja:'Igreja inaugurada! Sinos tocando na cidade. ⛪',
+  posto:'Posto de gasolina aberto! Os carros agradecem. ⛽',
+  farmacia:'Farmácia aberta! A cidade ficou mais saudável. 💊'
 };
 const TIPS = [
   'Dica: ruas ligam casas e prédios aos carros e pedestres.',
@@ -564,7 +580,12 @@ function reqLabel(q) {
 
 function loadContract() {
   const len = CONTRACTS.length, base = CONTRACTS[S.contractIdx % len], cyc = Math.floor(S.contractIdx / len);
-  const reqs = base.reqs.map(q => ({ ...q, n: q.k === 'schoolRoad' ? 1 : (q.n || 1) + cyc }));
+  const reqs = base.reqs.map(q => {
+    let n = q.k === 'schoolRoad' ? 1 : (q.n || 1) + cyc;
+    // prédios com limite por cidade nunca exigem mais do que o máximo permitido
+    if (q.k === 'pub' && TOOLS[q.kind] && TOOLS[q.kind].max) n = Math.min(n, TOOLS[q.kind].max);
+    return { ...q, n };
+  });
   const timeMax = Math.max(25, Math.round(base.time * MODES[S.mode].timeMult * Math.max(0.7, 1 - 0.08 * cyc)));
   S.contract = { ...base, reqs, cyc, reward: Math.round(base.reward * (1 + 0.25 * cyc)), timeMax };
   S.timeMax = timeMax; S.timeLeft = timeMax; S.phase = 'play';
@@ -622,6 +643,8 @@ function check(tool, r, c) {
   const t = S.grid[r][c];
   const empty = t.t === 'grass' && !t.lamp && !t.tree;
   const busy = 'Terreno ocupado. Use Demolir antes.';
+  const lim = TOOLS[tool] && TOOLS[tool].max;
+  if (lim && (tally().pub[tool] || 0) >= lim) return NO(`Limite atingido: máximo de ${lim} ${PUB_NAMES[tool]} na cidade.`);
   switch (tool) {
     case 'estrada':
       if (t.t === 'river') return NO('No rio só cabe uma ponte 🌉');
@@ -655,6 +678,7 @@ function check(tool, r, c) {
       break;
     case 'arvore':
     case 'praca': case 'escola': case 'banco': case 'policia': case 'prefeitura': case 'aeroporto':
+    case 'galpao17': case 'lanchonete': case 'cemiterio': case 'oficina': case 'fabrica': case 'igreja': case 'posto': case 'farmacia':
       if (!empty) return NO(t.t === 'river' ? 'Isso não fica no rio.' : busy);
       break;
     case 'demolir':
@@ -1239,7 +1263,18 @@ function drawPub(kind, x, y, tm) {
       ctx.fillStyle = '#fde68a'; ctx.fillRect(x + TS - 18, y + 6, 14, 4);
       break;
     }
+    default: drawPubGeneric(kind, x, y);
   }
+}
+
+function drawPubGeneric(kind, x, y) {
+  const base = y + TS - 6, cx = x + TS / 2, col = TOOLS[kind] ? TOOLS[kind].color : '#94a3b8';
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(cx, base + 1, TS * 0.38, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = col; ctx.fillRect(x + 8, base - 30, TS - 16, 30);
+  ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(x + 8, base - 30, TS - 16, 5);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '20px sans-serif';
+  ctx.fillText(TOOLS[kind] ? TOOLS[kind].icon : '🏢', cx, base - 16);
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
 
 function drawTree(x, y) {
