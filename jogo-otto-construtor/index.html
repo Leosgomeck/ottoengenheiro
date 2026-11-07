@@ -1007,8 +1007,8 @@ function renderTabs() {
 }
 function renderTools() {
   const box = $('tools'); box.innerHTML = '';
-  // Celular em pé: todas as construções na mesma barra, para deslizar
-  const items = Object.entries(TOOLS).filter(([id, t]) => id !== 'demolir' && (PORTRAIT_ALL() || t.cat === S.cat));
+  // Cada aba mostra só o seu tipo de construção; a barra desliza na horizontal
+  const items = Object.entries(TOOLS).filter(([id, t]) => id !== 'demolir' && t.cat === S.cat);
   items.push(['demolir', TOOLS.demolir]);
   for (const [id, t] of items) {
     const b = document.createElement('button');
@@ -1034,11 +1034,6 @@ function renderPalette() {
     box.appendChild(s);
   }
 }
-function PORTRAIT_ALL() {
-  return window.matchMedia('(max-width:860px) and (orientation:portrait)').matches;
-}
-window.matchMedia('(max-width:860px) and (orientation:portrait)').addEventListener('change', () => renderTools());
-
 function selectTool(id) {
   if (!TOOLS[id]) return;
   SFX.click();
