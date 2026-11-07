@@ -124,11 +124,62 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #introBar{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#fde047,#f59e0b,#fb923c);box-shadow:0 0 14px #fbbf24}
 .loadInfo{display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-top:10px;text-shadow:0 2px 6px rgba(0,0,0,.6)}
 
+/* Mensagens do Otto ficam numa faixa própria, fora do campo */
+.msgbar{min-width:0}
+.msgbar .tip{position:static;display:flex;gap:8px;align-items:center;background:none;border:0;box-shadow:none;padding:0;max-width:none;transition:none}
+.msgbar .tip.off{opacity:1;transform:none;pointer-events:auto}
+.msgbar .tip .av{width:40px;height:40px;font-size:22px}
+.msgbar .tip p{font-size:14px;line-height:1.25}
+.msgbar .banner{position:static;display:none;transform:none;background:#0f172a;color:#fff;border-radius:12px;padding:6px 10px;margin-top:8px;font-size:13px;white-space:normal;box-shadow:none;transition:none}
+.msgbar .banner.show{display:block;opacity:1;transform:none}
+.rotateHint{display:none;font-size:12px;color:#92400e;font-weight:700;margin-top:6px}
+
 @media (max-width:860px){
-  .main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
-  .side{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-left:0;border-top:4px solid #fcd34d;padding:8px;gap:8px}
-  .side .card{min-width:240px}
+  .hud{padding:6px 8px;gap:6px;flex-wrap:nowrap;overflow:hidden}
+  .chip{padding:4px 8px;border-radius:12px;gap:6px}
+  .chip .ico{font-size:17px}
+  .chip small{font-size:8px}
+  .chip strong{font-size:14px}
+  .iconbtn{width:34px;height:34px;font-size:15px;border-radius:10px}
+  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  .stage{padding:0}
+  #city{box-shadow:0 0 0 3px #f59e0b,0 0 0 5px #b45309}
+  .side{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-left:0;border-top:3px solid #fcd34d;padding:6px 8px;gap:8px;align-items:stretch;max-height:150px}
+  .side .card{min-width:230px;padding:8px 10px;overflow-y:auto}
+  .side .msgbar{min-width:250px;max-width:280px}
+  .card h3{font-size:15px}
+  .card p{font-size:12px}
+  .reqs{margin-top:6px;gap:4px}
+  .reqs li{font-size:12px;padding:4px 6px}
+  .timer{margin-top:6px}
+  .stats{gap:4px}
+  .stat b{font-size:14px}
+  .dock{padding:4px 6px 6px;gap:4px}
+  .tab{padding:5px 10px;font-size:12px}
+  .toolrow{gap:6px}
+  .tool{min-width:78px;padding:5px 4px;border-radius:14px;border-width:2px}
+  .tool .ic{font-size:22px}
+  .tool .nm{font-size:11px}
+  .tool .cs{font-size:11px}
+  .tool .kb{display:none}
+  .palette{gap:6px}
+  .sw{width:24px;height:24px}
   .hide-sm{display:none!important}
+  .rotateHint{display:none}
+}
+@media (orientation:portrait) and (max-width:600px){
+  .rotateHint{display:block}
+}
+/* Celular deitado: campo ocupa a altura, painel de obra vira coluna à direita */
+@media (max-width:860px) and (orientation:landscape){
+  .main{grid-template-columns:minmax(0,1fr) 220px;grid-template-rows:minmax(0,1fr)}
+  .side{flex-direction:column;overflow-x:hidden;overflow-y:auto;max-height:none;border-left:3px solid #fcd34d;border-top:0;padding:6px;gap:6px}
+  .side .card{min-width:0;width:100%;padding:6px 8px}
+  .side .msgbar{min-width:0;max-width:none}
+  .stats{display:none}
+  .reqs li{padding:3px 6px}
+  .tool{min-width:72px}
+  .hud .chip:nth-child(3){display:none}
 }
 </style>
 </head>
@@ -151,15 +202,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <main class="main">
     <section class="stage" id="stage">
       <canvas id="city"></canvas>
-      <div class="pauseMark hidden" id="pauseMark">⏸ PAUSADO</div>
-      <div class="banner" id="banner"></div>
-      <div class="tip off" id="tip">
-        <div class="av">👷<img src="otto_foto_original.jpeg" alt="" onerror="this.remove()"></div>
-        <div><div class="who">Otto</div><p id="tipText"></p></div>
-      </div>
     </section>
 
     <aside class="side">
+      <div class="card msgbar">
+        <div class="tip off" id="tip">
+          <div class="av">👷<img src="otto_foto_original.jpeg" alt="" onerror="this.remove()"></div>
+          <div><div class="who">Otto</div><p id="tipText"></p></div>
+        </div>
+        <div class="banner" id="banner"></div>
+        <p class="rotateHint">📱 Gire o celular para ver o campo maior.</p>
+      </div>
       <div class="card">
         <div class="label">Obra atual</div>
         <h3 id="obraTitle">—</h3>
@@ -908,7 +961,6 @@ function startGame() {
   S.incomeT = 0; S.eventT = randRange(m.evGap); S.spawnT = 0; S.checkT = 0; S.rush = 0;
   $('ovStart').classList.add('hidden');
   $('ovEnd').classList.add('hidden');
-  $('pauseMark').classList.add('hidden');
   renderTabs(); renderTools(); renderPalette(); updateHUD(); updateInfo();
   loadContract();
   showTip('Vamos construir! Comece com uma estrada saindo da margem do rio. 🛣️');
@@ -916,7 +968,6 @@ function startGame() {
 
 function toMenu() {
   S.running = false; S.phase = 'menu'; S.paused = false;
-  $('pauseMark').classList.add('hidden');
   $('ovEnd').classList.add('hidden');
   $('ovStart').classList.remove('hidden');
   demoCity();
@@ -926,8 +977,8 @@ function toMenu() {
 function togglePause() {
   if (!S.running) return;
   S.paused = !S.paused;
-  $('pauseMark').classList.toggle('hidden', !S.paused);
   $('bPause').textContent = S.paused ? '▶️' : '⏸️';
+  banner(S.paused ? '⏸ Jogo pausado (P para continuar)' : '▶️ Vamos lá!');
 }
 function toggleNight() {
   S.night = !S.night;
@@ -1306,7 +1357,8 @@ function frame(ts) {
 
 function fit() {
   const rect = $('stage').getBoundingClientRect();
-  const availW = Math.max(200, rect.width - 28), availH = Math.max(160, rect.height - 28);
+  const pad = window.matchMedia('(max-width:860px)').matches ? 8 : 28;
+  const availW = Math.max(200, rect.width - pad), availH = Math.max(160, rect.height - pad);
   const s = Math.min(availW / W, availH / H);
   const cw = Math.floor(W * s), ch = Math.floor(H * s);
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
